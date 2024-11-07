@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Campus Chatbot URL Store</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #eaf4f8;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 600px;
+            width: 100%;
+        }
+        h2 {
+            color: #082a78;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        label {
+            color: #082a78;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: block;
+        }
+        input[type="url"], input[type="text"] {
+            width: 96%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #efefef;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #082a78;
+            color: #ffffff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #2891ba;
+        }
+        .output, .form-group {
+            margin-top: 20px;
+        }
+        .url-output {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .url-output a {
+            color: #1aa469;
+            text-decoration: none;
+        }
+        .url-output a:hover {
+            text-decoration: underline;
+        }
+        .remove-btn {
+            background-color: #d6094d;
+            color: #fff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+        .remove-btn:hover {
+            background-color: #e02baa;
+        }
+
+       #clearButton {
+            background-color: #d6094d;
+            margin-top: 15px;
+        }
+        #clearButton:hover {
+            background-color: #e02baa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 id="title">AI Campus Chatbot URL Store</h2>
+
+        <!-- Display Node-RED URL -->
+        <div id="nodeRedUrlContainer" style="display: none;">
+            <label id="nodeRedUrlLabel">Your Node-RED URL:</label>
+            <div id="nodeRedUrlDisplay" class="url-output">
+                <a href="#" id="nodeRedUrlLink" target="_blank"></a>
+            </div>
+        </div>
+        
+        <!-- Base URL Input -->
+        <label for="baseUrl" id="baseUrlLabel" style="margin-top: 40px;">Enter your Node-RED URL:</label>
+        <input type="url" id="baseUrl" placeholder="https://your-node-red-url-1880.app.github.dev" required>
+
+        <!-- Form for adding custom routes and parameters -->
+        <div class="form-group">
+            <label for="route" id="routeLabel">Add Route (optional):</label>
+            <input type="text" id="route" placeholder="/webhook">
+
+            <label for="params" id="paramsLabel">Add Parameters (optional, format: key=value):</label>
+            <input type="text" id="params" placeholder="vorname=Alina">
+
+            <button id="addButton" onclick="addCustomUrl()">Add URL</button>
+            <button id="clearButton" onclick="clearStorage()">Clear All</button>
+        </div>
+
+        <!-- Display generated URLs -->
+        <div id="output" class="output"></div>
+    </div>
+
+    <script>
+        // Language translations
+        const translations = {
+            en: {
+                title: "AI Campus Chatbot URL Store",
+                baseUrlLabel: "Enter your Node-RED URL:",
+                routeLabel: "Add Route (optional):",
+                paramsLabel: "Add Parameters (optional, format: key=value):",
+                addButton: "Save URL",
+            clearButton: "Clear All",
+                generatedUrls: "Stored URLs:",
+                nodeRedUrlLabel: "Your Node-RED URL:",
+                alertBaseUrl: "Please enter a your Node-RED URL."
+            },
+            de: {
+                title: "KI Campus Chatbot URL Speicher",
+                baseUrlLabel: "Gib deine NODE-RED URL ein:",
+                routeLabel: "Pfad hinzufügen (optional):",
+                paramsLabel: "Parameter hinzufügen (optional, Format: key=value):",
+                addButton: "URL speichern",
+                clearButton: "Alles löschen",
+                generatedUrls: "Gespeicherte URLs:",
+                nodeRedUrlLabel: "Deine Node-RED-URL:",
+                alertBaseUrl: "Bitte gib deine NODE-RED URL ein."
+            }
+        };
+
+        // Detect user's language
+        const userLang = navigator.language.startsWith('de') ? 'de' : 'en';
+        const text = translations[userLang];
+
+        // Apply translations to the HTML
+        document.getElementById('title').textContent = text.title;
+        document.getElementById('baseUrlLabel').textContent = text.baseUrlLabel;
+        document.getElementById('routeLabel').textContent = text.routeLabel;
+        document.getElementById('paramsLabel').textContent = text.paramsLabel;
+        document.getElementById('addButton').textContent = text.addButton;
+        document.getElementById('nodeRedUrlLabel').textContent = text.nodeRedUrlLabel;
+
+        // Load URLs and base URL from localStorage
+        let customUrls = JSON.parse(localStorage.getItem('customUrls')) || [];
+        let storedBaseUrl = localStorage.getItem('baseUrl') || '';
+
+        function addCustomUrl() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const route = document.getElementById('route').value.trim();
+            const params = document.getElementById('params').value.trim();
+
+            if (!baseUrl) {
+                alert(text.alertBaseUrl);
+                return;
+            }
+
+            // Save base URL in localStorage and update display
+            localStorage.setItem('baseUrl', baseUrl);
+            displayBaseUrl(baseUrl);
+
+            // Build full URL with optional route and parameters
+            let fullUrl = baseUrl;
+            if (route) {
+                fullUrl += route.startsWith('/') ? route : `/${route}`;
+            }
+            if (params) {
+                fullUrl += `?${params}`;
+            }
+
+            // Add to custom URLs array and save to localStorage
+            customUrls.push(fullUrl);
+            localStorage.setItem('customUrls', JSON.stringify(customUrls));
+
+            // Update display
+            displayUrls();
+            
+            // Clear input fields for convenience
+            document.getElementById('route').value = '';
+            document.getElementById('params').value = '';
+        }
+
+        function displayBaseUrl(baseUrl) {
+            // Show the Node-RED URL section with the stored base URL as a clickable link
+            const nodeRedUrlContainer = document.getElementById('nodeRedUrlContainer');
+            const nodeRedUrlLink = document.getElementById('nodeRedUrlLink');
+
+            nodeRedUrlContainer.style.display = 'block';
+            nodeRedUrlLink.href = baseUrl;
+            nodeRedUrlLink.textContent = baseUrl;
+        }
+
+        function displayUrls() {
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = `<h3>${text.generatedUrls}</h3>`;
+
+            customUrls.forEach((url, index) => {
+                const urlElement = document.createElement('div');
+                urlElement.className = 'url-output';
+                urlElement.innerHTML = `
+                    <a href="${url}" target="_blank">${url}</a>
+                    <button class="remove-btn" onclick="removeUrl(${index})">Remove</button>
+                `;
+                outputDiv.appendChild(urlElement);
+            });
+        }
+
+        function removeUrl(index) {
+            // Remove URL from array and update localStorage
+            customUrls.splice(index, 1);
+            localStorage.setItem('customUrls', JSON.stringify(customUrls));
+
+            // Update displayed list
+            displayUrls();
+        }
+
+        function clearStorage() {
+            // Clear all data from localStorage
+            localStorage.removeItem('baseUrl');
+            localStorage.removeItem('customUrls');
+            customUrls = [];
+
+            // Clear displayed content
+            document.getElementById('nodeRedUrlContainer').style.display = 'none';
+            document.getElementById('baseUrl').value = '';
+            document.getElementById('output').innerHTML = '';
+        }
+
+
+        // Display URLs and load base URL on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set the base URL input if it was stored and display it
+            if (storedBaseUrl) {
+                document.getElementById('baseUrl').value = storedBaseUrl;
+                displayBaseUrl(storedBaseUrl);
+            }
+            displayUrls();
+        });
+    </script>
+</body>
+</html>
