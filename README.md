@@ -1,5 +1,8 @@
 # aicampus-chatbot-URL-store
 
-This page lets you store complicated URLs for convenience!
+Easily save and manage your URLs right here!
+
+All your data is saved on your own device – nothing leaves your browser. 
+Just a reminder: avoid adding any sensitive information, just to be safe.
 
 [AI Campus Chatbot URL Store](https://weberi.github.io/aicampus-chatbot-URL-store/)
